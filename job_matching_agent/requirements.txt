@@ -1,0 +1,10 @@
+# AI Job Matching Agent Requirements
+fastapi
+sentence-transformers
+supabase
+openai
+langchain
+streamlit
+pdfplumber
+python-dotenv
+requests
