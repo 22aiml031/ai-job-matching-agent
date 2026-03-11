@@ -8,4 +8,4 @@ streamlit
 pdfplumber
 python-dotenv
 requests
-spacy
+spacy==3.7.2
