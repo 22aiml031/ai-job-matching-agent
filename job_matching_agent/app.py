@@ -108,47 +108,29 @@ if uploaded_file:
 
     if st.button("Recommend Jobs"):
 
-        job_recommender = JobRecommender()
+    from database.vector_search import VectorSearch
+    from agent.job_recommender import JobRecommender
 
-        try:
+    vector_search = VectorSearch()
 
-            recommendations = job_recommender.recommend_jobs(
-                resume_text,
-                top_k=5
-            )
+    job_recommender = JobRecommender(vector_search)
 
-            if not recommendations:
+    try:
+        recommendations = job_recommender.recommend_jobs(resume_text, top_k=5)
 
-                st.warning(
-                    "No jobs found. Please check if jobs exist in Supabase."
-                )
+        if not recommendations:
+            st.warning("No jobs found. Check Supabase jobs table.")
+        else:
+            for job in recommendations:
 
-            else:
+                match_score = round(job["similarity"] * 100)
 
-                st.subheader("Recommended Jobs")
+                st.markdown(f"### {job['title']}")
+                st.write(f"Skills: {job['skills']}")
+                st.write(f"Experience: {job['experience_level']}")
+                st.write(f"Match Score: {match_score}%")
 
-                for job in recommendations:
+                st.progress(match_score / 100)
 
-                    match_score = (
-                        round(job["similarity"] * 100)
-                        if job.get("similarity")
-                        else 0
-                    )
-
-                    st.markdown(f"### {job['title']}")
-
-                    st.write(f"**Skills:** {job['skills']}")
-
-                    st.write(
-                        f"**Experience Level:** {job['experience_level']}"
-                    )
-
-                    st.write(f"**Match Score:** {match_score}%")
-
-                    st.progress(match_score / 100)
-
-                    st.divider()
-
-        except Exception as e:
-
-            st.error(f"Error during job recommendation: {e}")
+    except Exception as e:
+        st.error(f"Error during job recommendation: {e}")
