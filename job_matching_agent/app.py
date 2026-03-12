@@ -4,19 +4,23 @@ import os
 import re
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from pipeline.resume_parser import ResumeParser
+from database.vector_search import VectorSearch
 from agent.job_recommender import JobRecommender
+
+st.set_page_config(page_title="AI Job Matching Agent", layout="wide")
 
 st.title("AI Job Matching Agent")
 
-# -------------------------------
-# Simple Skill Extraction
-# -------------------------------
-
+# -----------------------------
+# Skill Extraction
+# -----------------------------
 def extract_skills(text):
 
     skills_db = [
@@ -29,6 +33,7 @@ def extract_skills(text):
     text = text.lower()
 
     found_skills = []
+
     for skill in skills_db:
         if skill in text:
             found_skills.append(skill)
@@ -36,10 +41,9 @@ def extract_skills(text):
     return list(set(found_skills))
 
 
-# -------------------------------
+# -----------------------------
 # Experience Detection
-# -------------------------------
-
+# -----------------------------
 def detect_experience(text):
 
     match = re.search(r'(\d+)\+?\s*(years|yrs)', text.lower())
@@ -63,15 +67,19 @@ def detect_experience(text):
     return "Not Found"
 
 
-# -------------------------------
+# -----------------------------
 # Upload Resume
-# -------------------------------
-
-uploaded_file = st.file_uploader("Upload your resume (PDF or TXT)")
-
+# -----------------------------
+uploaded_file = st.file_uploader(
+    "Upload your resume (PDF or TXT)",
+    type=["pdf", "txt"]
+)
 
 if uploaded_file:
 
+    # -----------------------------
+    # Parse Resume
+    # -----------------------------
     if uploaded_file.name.endswith(".pdf"):
         resume_text = ResumeParser.parse_pdf(uploaded_file)
 
@@ -80,12 +88,15 @@ if uploaded_file:
             uploaded_file.read().decode("utf-8")
         )
 
-
+    # -----------------------------
+    # Show Resume Text
+    # -----------------------------
     with st.expander("📄 Extracted Resume Text"):
         st.write(resume_text)
 
-
-    # Extract skills
+    # -----------------------------
+    # Extract Skills
+    # -----------------------------
     skills = extract_skills(resume_text)
 
     with st.expander("🧠 Extracted Skills"):
@@ -94,49 +105,66 @@ if uploaded_file:
         else:
             st.write("No skills detected")
 
-
-    # Detect experience
+    # -----------------------------
+    # Detect Experience
+    # -----------------------------
     experience = detect_experience(resume_text)
 
     with st.expander("💼 Experience Level"):
         st.write(experience)
 
-
-    # -------------------------------
-    # Job Recommendation
-    # -------------------------------
-
+    # -----------------------------
+    # Job Recommendation Button
+    # -----------------------------
     if st.button("Recommend Jobs"):
 
-      from database.vector_search import VectorSearch
-      from agent.job_recommender import JobRecommender
+        try:
 
-      vector_search = VectorSearch()
+            # Initialize services
+            vector_search = VectorSearch()
+            job_recommender = JobRecommender(vector_search)
 
-      job_recommender = JobRecommender(vector_search)
+            # Get recommendations
+            recommendations = job_recommender.recommend_jobs(
+                resume_text,
+                top_k=5
+            )
 
-      try:
-          recommendations = job_recommender.recommend_jobs(resume_text, top_k=5)
+            # -----------------------------
+            # Show Results
+            # -----------------------------
+            if not recommendations:
 
-          if not recommendations:
-              st.warning("No jobs found. Please check Supabase.")
+                st.warning(
+                    "No jobs found. Please check Supabase job table."
+                )
 
-          else:
-              st.subheader("Recommended Jobs")
+            else:
 
-              for job in recommendations:
+                st.subheader("Recommended Jobs")
 
-                  match_score = round(job["similarity"] * 100)
+                for job in recommendations:
 
-                  st.markdown(f"### {job['title']}")
-                  st.write(f"Skills: {job['skills']}")
-                  st.write(f"Experience: {job['experience_level']}")
-                  st.write(f"Match Score: {match_score}%")
+                    match_score = (
+                        round(job["similarity"] * 100)
+                        if job.get("similarity")
+                        else 0
+                    )
 
-                  st.progress(match_score / 100)
+                    st.markdown(f"### {job['title']}")
 
-                  st.divider()
+                    st.write(f"**Skills:** {job['skills']}")
 
-     except Exception as e:
+                    st.write(
+                        f"**Experience Level:** {job['experience_level']}"
+                    )
+
+                    st.write(f"**Match Score:** {match_score}%")
+
+                    st.progress(match_score / 100)
+
+                    st.divider()
+
+        except Exception as e:
+
             st.error(f"Error during job recommendation: {e}")
-          
