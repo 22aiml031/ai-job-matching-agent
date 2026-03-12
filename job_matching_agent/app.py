@@ -14,6 +14,7 @@ from pipeline.resume_parser import ResumeParser
 from database.vector_search import VectorSearch
 from agent.job_recommender import JobRecommender
 
+# Page config
 st.set_page_config(page_title="AI Job Matching Agent", layout="wide")
 
 st.title("AI Job Matching Agent")
@@ -68,7 +69,7 @@ def detect_experience(text):
 
 
 # -----------------------------
-# Upload Resume
+# Resume Upload
 # -----------------------------
 uploaded_file = st.file_uploader(
     "Upload your resume (PDF or TXT)",
@@ -114,45 +115,66 @@ if uploaded_file:
         st.write(experience)
 
     # -----------------------------
-    # Job Recommendation Button
+    # Recommend Jobs
     # -----------------------------
     if st.button("Recommend Jobs"):
 
-       try:
+        try:
 
-           supabase_url = os.getenv("SUPABASE_URL")
-           supabase_key = os.getenv("SUPABASE_KEY")
+            supabase_url = os.getenv("SUPABASE_URL")
+            supabase_key = os.getenv("SUPABASE_KEY")
 
-           vector_search = VectorSearch(supabase_url, supabase_key)
+            vector_search = VectorSearch(
+                supabase_url,
+                supabase_key
+            )
 
-           job_recommender = JobRecommender(vector_search)
+            job_recommender = JobRecommender(
+                vector_search
+            )
 
-           recommendations = job_recommender.recommend_jobs(resume_text, top_k=5)
+            recommendations = job_recommender.recommend_jobs(
+                resume_text,
+                top_k=5
+            )
 
-           if not recommendations:
+            # -----------------------------
+            # Show Results
+            # -----------------------------
+            if not recommendations:
 
-               st.warning("No jobs found. Please check Supabase job table.")
+                st.warning(
+                    "No jobs found. Please check Supabase jobs table."
+                )
 
-           else:
+            else:
 
-               st.subheader("Recommended Jobs")
+                st.subheader("Recommended Jobs")
 
-               for job in recommendations:
+                for job in recommendations:
 
-                  match_score = round(job["similarity"] * 100)
+                    match_score = (
+                        round(job["similarity"] * 100)
+                        if job.get("similarity")
+                        else 0
+                    )
 
-                  st.markdown(f"### {job['title']}")
+                    st.markdown(f"### {job['title']}")
 
-                  st.write(f"Skills: {job['skills']}")
+                    st.write(f"**Skills:** {job['skills']}")
 
-                  st.write(f"Experience Level: {job['experience_level']}")
+                    st.write(
+                        f"**Experience Level:** {job['experience_level']}"
+                    )
 
-                  st.write(f"Match Score: {match_score}%")
+                    st.write(
+                        f"**Match Score:** {match_score}%"
+                    )
 
-                  st.progress(match_score / 100)
+                    st.progress(match_score / 100)
 
-                  st.divider()
+                    st.divider()
 
-      except Exception as e:
+        except Exception as e:
 
             st.error(f"Error during job recommendation: {e}")
