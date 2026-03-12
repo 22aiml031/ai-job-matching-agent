@@ -137,5 +137,5 @@ if uploaded_file:
 
                   st.divider()
 
-    except Exception as e:
-        st.error(f"Error during job recommendation: {e}")
+     except Exception as e:
+         st.error(f"Error during job recommendation: {e}")
