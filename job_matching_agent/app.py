@@ -118,53 +118,41 @@ if uploaded_file:
     # -----------------------------
     if st.button("Recommend Jobs"):
 
-        try:
+    try:
 
-            # Initialize services
-            vector_search = VectorSearch()
-            job_recommender = JobRecommender(vector_search)
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
 
-            # Get recommendations
-            recommendations = job_recommender.recommend_jobs(
-                resume_text,
-                top_k=5
-            )
+        vector_search = VectorSearch(supabase_url, supabase_key)
 
-            # -----------------------------
-            # Show Results
-            # -----------------------------
-            if not recommendations:
+        job_recommender = JobRecommender(vector_search)
 
-                st.warning(
-                    "No jobs found. Please check Supabase job table."
-                )
+        recommendations = job_recommender.recommend_jobs(resume_text, top_k=5)
 
-            else:
+        if not recommendations:
 
-                st.subheader("Recommended Jobs")
+            st.warning("No jobs found. Please check Supabase job table.")
 
-                for job in recommendations:
+        else:
 
-                    match_score = (
-                        round(job["similarity"] * 100)
-                        if job.get("similarity")
-                        else 0
-                    )
+            st.subheader("Recommended Jobs")
 
-                    st.markdown(f"### {job['title']}")
+            for job in recommendations:
 
-                    st.write(f"**Skills:** {job['skills']}")
+                match_score = round(job["similarity"] * 100)
 
-                    st.write(
-                        f"**Experience Level:** {job['experience_level']}"
-                    )
+                st.markdown(f"### {job['title']}")
 
-                    st.write(f"**Match Score:** {match_score}%")
+                st.write(f"Skills: {job['skills']}")
 
-                    st.progress(match_score / 100)
+                st.write(f"Experience Level: {job['experience_level']}")
 
-                    st.divider()
+                st.write(f"Match Score: {match_score}%")
 
-        except Exception as e:
+                st.progress(match_score / 100)
 
-            st.error(f"Error during job recommendation: {e}")
+                st.divider()
+
+    except Exception as e:
+
+        st.error(f"Error during job recommendation: {e}")
