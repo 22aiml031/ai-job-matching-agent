@@ -108,29 +108,34 @@ if uploaded_file:
 
     if st.button("Recommend Jobs"):
 
-    from database.vector_search import VectorSearch
-    from agent.job_recommender import JobRecommender
+      from database.vector_search import VectorSearch
+      from agent.job_recommender import JobRecommender
 
-    vector_search = VectorSearch()
+      vector_search = VectorSearch()
 
-    job_recommender = JobRecommender(vector_search)
+      job_recommender = JobRecommender(vector_search)
 
-    try:
-        recommendations = job_recommender.recommend_jobs(resume_text, top_k=5)
+      try:
+          recommendations = job_recommender.recommend_jobs(resume_text, top_k=5)
 
-        if not recommendations:
-            st.warning("No jobs found. Check Supabase jobs table.")
-        else:
-            for job in recommendations:
+          if not recommendations:
+              st.warning("No jobs found. Please check Supabase.")
 
-                match_score = round(job["similarity"] * 100)
+          else:
+              st.subheader("Recommended Jobs")
 
-                st.markdown(f"### {job['title']}")
-                st.write(f"Skills: {job['skills']}")
-                st.write(f"Experience: {job['experience_level']}")
-                st.write(f"Match Score: {match_score}%")
+              for job in recommendations:
 
-                st.progress(match_score / 100)
+                  match_score = round(job["similarity"] * 100)
+
+                  st.markdown(f"### {job['title']}")
+                  st.write(f"Skills: {job['skills']}")
+                  st.write(f"Experience: {job['experience_level']}")
+                  st.write(f"Match Score: {match_score}%")
+
+                  st.progress(match_score / 100)
+
+                  st.divider()
 
     except Exception as e:
         st.error(f"Error during job recommendation: {e}")
