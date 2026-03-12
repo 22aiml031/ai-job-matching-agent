@@ -8,8 +8,8 @@ from spacy.matcher import PhraseMatcher
 from dotenv import load_dotenv
 
 load_dotenv()
-st.write(f"SUPABASE_URL: {os.getenv('SUPABASE_URL')}")
-st.write(f"SUPABASE_KEY: {os.getenv('SUPABASE_KEY')}")
+# st.write(f"SUPABASE_URL: {os.getenv('SUPABASE_URL')}")
+# st.write(f"SUPABASE_KEY: {os.getenv('SUPABASE_KEY')}")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from embeddings.embedding_model import EmbeddingGenerator
 from pipeline.resume_parser import ResumeParser
